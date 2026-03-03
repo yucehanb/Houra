@@ -107,59 +107,80 @@ export function ProfileView() {
     const [isSaving, setIsSaving] = useState(false)
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [skillInput, setSkillInput] = useState('')
     const [needInput, setNeedInput] = useState('')
 
     const fetchProfile = async () => {
         setIsLoading(true)
+        setError(null)
         try {
+            // Check if environment variables are missing (helpful for Vercel debugging)
+            if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+                throw new Error('Supabase yapılandırması eksik. Lütfen Vercel Environment Variables ayarlarını kontrol edin.')
+            }
+
             const { data: { session }, error: sessionError } = await supabase.auth.getSession()
             if (sessionError) throw sessionError
 
-            const id = authUser?.id || session?.user?.id
-
-            if (id && session) {
-                const { data, error } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('id', id)
-                    .single()
-
-                if (data && !error) {
-                    const profileData = {
-                        ...EMPTY_PROFILE,
-                        ...data,
-                        full_name: data.full_name || getFirstName(session.user.user_metadata?.full_name || '')
-                    }
-                    setProfile(profileData as any)
-                    setAuthUser(data as any)
-
-                    reset({
-                        full_name: profileData.full_name,
-                        bio: data.bio ?? '',
-                        city: data.city ?? '',
-                        skills: data.skills || [],
-                        needs: data.needs || [],
-                    })
-                } else if (session.user) {
-                    // Kullanıcı var ama tabloda kaydı yoksa
-                    const newUserProfile = {
-                        ...EMPTY_PROFILE,
-                        id: session.user.id,
-                        full_name: getFirstName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || ''),
-                    }
-                    setProfile(newUserProfile as any)
-                    reset({
-                        full_name: newUserProfile.full_name,
-                        bio: '',
-                        city: '',
-                        skills: [],
-                        needs: [],
-                    })
-                }
+            if (!session) {
+                // Not logged in - should probably redirect but for now just stop loading
+                setIsLoading(false)
+                return
             }
-        } catch (err) {
+
+            const id = authUser?.id || session.user.id
+
+            const { data, error: fetchError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', id)
+                .single()
+
+            if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "No rows found"
+                console.error('User fetch error:', fetchError)
+                // If the error is that the table doesn't exist, this will trigger
+                if (fetchError.message?.includes('relation "users" does not exist')) {
+                    throw new Error('Veritabanında "users" tablosu bulunamadı. Lütfen SQL kurulumunu yapın.')
+                }
+                throw fetchError
+            }
+
+            if (data) {
+                const profileData = {
+                    ...EMPTY_PROFILE,
+                    ...data,
+                    full_name: data.full_name || getFirstName(session.user.user_metadata?.full_name || '')
+                }
+                setProfile(profileData as any)
+                setAuthUser(data as any)
+
+                reset({
+                    full_name: profileData.full_name,
+                    bio: data.bio ?? '',
+                    city: data.city ?? '',
+                    skills: data.skills || [],
+                    needs: data.needs || [],
+                })
+            } else {
+                // Kullanıcı var ama tabloda kaydı yoksa (İlk giriş)
+                const newUserProfile = {
+                    ...EMPTY_PROFILE,
+                    id: session.user.id,
+                    full_name: getFirstName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || 'Kullanıcı'),
+                }
+                setProfile(newUserProfile as any)
+                reset({
+                    full_name: newUserProfile.full_name,
+                    bio: '',
+                    city: '',
+                    skills: [],
+                    needs: [],
+                })
+            }
+        } catch (err: any) {
             console.error('Error fetching profile:', err)
+            setError(err.message || 'Profil verileri yüklenirken bir hata oluştu.')
         } finally {
             setIsLoading(false)
         }
@@ -311,6 +332,24 @@ export function ProfileView() {
             <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
                 <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
                 <p className="text-slate-400 animate-pulse text-sm">Profil yükleniyor…</p>
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 p-6 text-center">
+                <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mb-2">
+                    <X className="w-6 h-6" />
+                </div>
+                <h3 className="text-white font-bold text-lg">Bir Hata Oluştu</h3>
+                <p className="text-slate-400 text-sm max-w-xs">{error}</p>
+                <button
+                    onClick={fetchProfile}
+                    className="mt-4 px-6 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm hover:bg-white/10 transition-all"
+                >
+                    Tekrar Dene
+                </button>
             </div>
         )
     }
