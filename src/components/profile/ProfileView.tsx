@@ -4,11 +4,12 @@ import { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Edit2, Check, X, Clock, Star, MapPin, Award, Tag, Zap, Camera, Loader2 } from 'lucide-react'
+import { Edit2, Check, X, Clock, Star, MapPin, Award, Tag, Zap, Camera, Loader2, LayoutGrid, MessageSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CATEGORIES } from '@/types'
 import { useAuthStore } from '@/store/authStore'
 import { createClient } from '@/lib/supabase/client'
+import { MyListings } from '@/components/profile/MyListings'
 
 const profileSchema = z.object({
     full_name: z.string().min(2, 'En az 2 karakter').max(50, 'En fazla 50 karakter'),
@@ -92,6 +93,7 @@ export function ProfileView() {
         return fullName.split(' ')[0]
     }
 
+    const [activeTab, setActiveTab] = useState<'listings' | 'reviews'>('listings')
     const [isEditing, setIsEditing] = useState(false)
     const [profile, setProfile] = useState(() => {
         if (authUser) {
@@ -544,36 +546,58 @@ export function ProfileView() {
                 </div>
             </div>
 
-            {/* ── Değerlendirmeler ──────────────── */}
+            {/* ── Alt Sekmeler (İlanlarım & Değerlendirmeler) ──────────────── */}
             {!isEditing && (
-                <div className="space-y-3">
-                    <h2 className="text-white font-bold flex items-center gap-2">
-                        <Star className="w-4 h-4 text-yellow-400" />
-                        Değerlendirmeler
-                        <span className="text-slate-500 font-normal text-sm">({MOCK_REVIEWS.length})</span>
-                    </h2>
-                    {MOCK_REVIEWS.length > 0 ? (
-                        MOCK_REVIEWS.map((review: any) => (
-                            <div key={review.id} className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold">
-                                            {review.reviewer.split(' ').map((n: string) => n[0]).join('')}
+                <div className="space-y-6">
+                    <div className="flex border-b border-white/10">
+                        <button
+                            onClick={() => setActiveTab('listings')}
+                            className={cn('flex items-center gap-2 px-6 py-4 text-sm font-semibold border-b-2 transition-all',
+                                activeTab === 'listings' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white')}
+                        >
+                            <LayoutGrid className="w-4 h-4" />
+                            İlanlarım
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('reviews')}
+                            className={cn('flex items-center gap-2 px-6 py-4 text-sm font-semibold border-b-2 transition-all',
+                                activeTab === 'reviews' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white')}
+                        >
+                            <MessageSquare className="w-4 h-4" />
+                            Değerlendirmeler <span className="px-1.5 py-0.5 rounded-md bg-white/10 text-xs ml-1">{MOCK_REVIEWS.length}</span>
+                        </button>
+                    </div>
+
+                    <div className="pt-2">
+                        {activeTab === 'listings' && <MyListings />}
+
+                        {activeTab === 'reviews' && (
+                            <div className="space-y-3">
+                                {MOCK_REVIEWS.length > 0 ? (
+                                    MOCK_REVIEWS.map((review: any) => (
+                                        <div key={review.id} className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold">
+                                                        {review.reviewer.split(' ').map((n: string) => n[0]).join('')}
+                                                    </div>
+                                                    <span className="text-slate-300 text-sm font-medium">{review.reviewer}</span>
+                                                </div>
+                                                <StarRating rating={review.rating} />
+                                            </div>
+                                            {review.comment && (
+                                                <p className="text-slate-400 text-sm leading-relaxed">{review.comment}</p>
+                                            )}
                                         </div>
-                                        <span className="text-slate-300 text-sm font-medium">{review.reviewer}</span>
+                                    ))
+                                ) : (
+                                    <div className="bg-white/5 border border-white/10 rounded-xl p-6 text-center">
+                                        <p className="text-slate-400 text-sm">Henüz bir değerlendirme bulunmuyor.</p>
                                     </div>
-                                    <StarRating rating={review.rating} />
-                                </div>
-                                {review.comment && (
-                                    <p className="text-slate-400 text-sm leading-relaxed">{review.comment}</p>
                                 )}
                             </div>
-                        ))
-                    ) : (
-                        <div className="bg-white/5 border border-white/10 rounded-xl p-6 text-center">
-                            <p className="text-slate-400 text-sm">Henüz bir değerlendirme bulunmuyor.</p>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             )}
         </div>

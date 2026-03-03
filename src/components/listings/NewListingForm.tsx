@@ -78,11 +78,12 @@ export function NewListingForm() {
         setSubmitError(null)
 
         try {
-            // 15 saniyelik bir zaman aşımı ekleyelim (Supabase bazen geç dönebiliyor)
+            console.log('[DEBUG] Starting submit process...');
             const timeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('İstek zaman aşımına uğradı (15s).')), 15000)
             )
 
+            console.log('[DEBUG] Creating listing in store...');
             const insertPromise = createListing({
                 user_id: user.id,
                 title: values.title,
@@ -94,12 +95,14 @@ export function NewListingForm() {
                 status: 'active',
             })
 
+            console.log('[DEBUG] Awaiting Promise.race...');
             await Promise.race([insertPromise, timeoutPromise])
+            console.log('[DEBUG] Promise.race completed successfully!');
 
             setSubmitted(true)
             setTimeout(() => router.push('/dashboard'), 1500)
         } catch (err: any) {
-            console.error('İlan yayınlanırken hata oluştu:', err)
+            console.error('[DEBUG] İlan yayınlanırken hata oluştu:', err)
             setSubmitError(err.message || 'Bir hata oluştu. Lütfen tekrar deneyin.')
         } finally {
             setIsSubmitting(false)
