@@ -49,14 +49,44 @@ export const useListingsStore = create<ListingsState>()(
             createListing: async (listingData) => {
                 set({ isLoading: true })
                 try {
-                    const supabase = createClient()
-                    const { data, error } = await supabase
-                        .from('listings')
-                        .insert(listingData)
-                        .select()
-                        .single()
+                    console.log('[DEBUG] createListing called. Environment variables check:');
+                    console.log('[DEBUG] NEXT_PUBLIC_SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+                    console.log('[DEBUG] NEXT_PUBLIC_SUPABASE_ANON_KEY exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
-                    if (error) throw error
+                    const supabase = createClient()
+                    console.log('[DEBUG] Supabase client created successfully.');
+
+                    // Vercel üzerinde @supabase/ssr istemcisinin POST isteklerinde asılı kalma (hanging) 
+                    // sorununu aşmak için Supabase REST API'sine doğrudan temiz bir fetch isteği atıyoruz.
+                    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+                    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+                    if (!supabaseUrl || !supabaseAnonKey) {
+                        throw new Error("Supabase yapılandırması eksik.");
+                    }
+
+                    // Kullanıcının mevcut oturum token'ını al (RLS için gerekli)
+                    const { data: { session } } = await supabase.auth.getSession();
+                    const token = session?.access_token || supabaseAnonKey;
+
+                    const response = await fetch(`${supabaseUrl}/rest/v1/listings`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': supabaseAnonKey,
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=representation' // Eklenen veriyi geri döndür
+                        },
+                        body: JSON.stringify(listingData)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'İlan kaydedilirken API hatası oluştu.');
+                    }
+
+                    const resultData = await response.json();
+                    const data = resultData[0]; // representation array döner
 
                     if (data) {
                         const tempListing = {
