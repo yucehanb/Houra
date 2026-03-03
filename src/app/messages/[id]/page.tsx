@@ -5,25 +5,26 @@ import { notFound } from 'next/navigation'
 import { useEffect } from 'react'
 import { MessageCircle } from 'lucide-react'
 import { useMessagesStore } from '@/store/messagesStore'
+import { useAuthStore } from '@/store/authStore'
 import { ConversationList } from '@/components/messages/ConversationList'
 import { ChatView } from '@/components/messages/ChatView'
 
 export default function ConversationPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
-    const { conversations, messages, markAllRead } = useMessagesStore()
+    const { conversations, fetchConversations } = useMessagesStore()
+    const user = useAuthStore(s => s.user)
+
+    useEffect(() => {
+        if (user?.id && conversations.length === 0) {
+            fetchConversations(user.id)
+        }
+    }, [user?.id, conversations.length, fetchConversations])
 
     const conv = conversations.find(c => c.id === id)
 
-    // Konuşma açıldığında okunmamışları sıfırla
-    useEffect(() => {
-        if (conv && conv.unread > 0) {
-            markAllRead(id)
-        }
-    }, [id, conv?.unread, markAllRead])
-
-    if (!conv) notFound()
-
-    const chatMessages = messages[id] ?? []
+    // Not found only if we are not loading and still don't have it
+    if (!conv && conversations.length > 0) notFound()
+    if (!conv) return null // Loading...
 
     return (
         <div className="flex h-full overflow-hidden">
@@ -47,9 +48,8 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
                 <ChatView
                     conversationId={id}
                     participant={conv.participant}
-                    listingTitle={conv.listingTitle}
-                    listingCredits={conv.listingCredits}
-                    initialMessages={chatMessages}
+                    listingTitle={conv.listing_title || ''}
+                    listingCredits={conv.listing_credits || 0}
                 />
             </div>
         </div>

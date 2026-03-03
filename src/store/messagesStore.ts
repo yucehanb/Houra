@@ -1,57 +1,28 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createClient } from '@/lib/supabase/client'
+import type { RealtimePostgresInsertPayload } from '@supabase/supabase-js'
+
+const supabase = createClient()
 
 // ── Tip tanımları ─────────────────────────────────────────────────────────────
 export interface ChatMessage {
     id: string
-    senderId: string
+    conversation_id: string
+    sender_id: string
     content: string
-    isMe: boolean
     created_at: string
+    is_read?: boolean
 }
 
 export interface Conversation {
     id: string
-    listingId: string
-    listingTitle: string
-    listingCredits: number
+    listing_id: string
+    listing_title?: string
+    listing_credits?: number
     participant: { id: string; name: string; avatar: string | null }
-    lastMessage: string
-    lastMessageTime: string
-    unread: number
-}
-
-// ── Başlangıç mock verileri ──────────────────────────────────────────────────
-const INITIAL_CONVERSATIONS: Conversation[] = [
-    { id: 'conv1', listingId: '1', listingTitle: 'İngilizce Konuşma Pratiği', listingCredits: 1, participant: { id: 'u1', name: 'Ayşe Kaya', avatar: null }, lastMessage: 'Tamam, cumartesi öğleden sonra müsaitim.', lastMessageTime: new Date(Date.now() - 1000 * 60 * 15).toISOString(), unread: 2 },
-    { id: 'conv2', listingId: '2', listingTitle: 'Bilgisayar Formatı & Kurulum', listingCredits: 2, participant: { id: 'u2', name: 'Mert Demir', avatar: null }, lastMessage: 'Bilgisayarınızı getirebilirsiniz, sorun yok.', lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), unread: 0 },
-    { id: 'conv3', listingId: '3', listingTitle: 'Yoga & Meditasyon Dersi', listingCredits: 1, participant: { id: 'u3', name: 'Zeynep Arslan', avatar: null }, lastMessage: 'Yoga dersi için teşekkür ederim!', lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), unread: 0 },
-    { id: 'conv4', listingId: '4', listingTitle: 'Logo & Sosyal Medya Tasarımı', listingCredits: 1.5, participant: { id: 'u4', name: 'Emre Şahin', avatar: null }, lastMessage: 'Logo tasarımını haftaya teslim edebilirim.', lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), unread: 1 },
-]
-
-const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
-    conv1: [
-        { id: 'm1-1', senderId: 'u1', content: 'Merhaba! İngilizce pratik ilanınızı gördüm. Nasıl çalışıyorsunuz?', isMe: false, created_at: new Date(Date.now() - 1000 * 60 * 60).toISOString() },
-        { id: 'm1-2', senderId: 'me', content: 'Merhaba Ayşe Hanım! Genellikle günlük konuşmalar ve dizi diyalogları üzerinden gidiyoruz. Hangi seviyedesiniz?', isMe: true, created_at: new Date(Date.now() - 1000 * 60 * 55).toISOString() },
-        { id: 'm1-3', senderId: 'u1', content: 'B1 seviyesindeyim ama konuşmakta zorlanıyorum. Bu hafta sonu müsait misiniz?', isMe: false, created_at: new Date(Date.now() - 1000 * 60 * 50).toISOString() },
-        { id: 'm1-4', senderId: 'me', content: 'Cumartesi veya Pazar öğleden sonra uygun. Hangi gün daha iyi?', isMe: true, created_at: new Date(Date.now() - 1000 * 60 * 45).toISOString() },
-        { id: 'm1-5', senderId: 'u1', content: 'Tamam, cumartesi öğleden sonra müsaitim.', isMe: false, created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString() },
-    ],
-    conv2: [
-        { id: 'm2-1', senderId: 'me', content: 'Merhaba! Bilgisayarımda ciddi yavaşlama var, yardımcı olabilir misiniz?', isMe: true, created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString() },
-        { id: 'm2-2', senderId: 'u2', content: 'Tabii ki! Önce uzaktan bakabiliriz, olmadı evinize gelebilirim.', isMe: false, created_at: new Date(Date.now() - 1000 * 60 * 60 * 4.5).toISOString() },
-        { id: 'm2-3', senderId: 'u2', content: 'Bilgisayarınızı getirebilirsiniz, sorun yok.', isMe: false, created_at: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString() },
-    ],
-    conv3: [
-        { id: 'm3-1', senderId: 'u3', content: 'Yoga dersinden çok memnun kaldım, teşekkürler!', isMe: false, created_at: new Date(Date.now() - 1000 * 60 * 60 * 25).toISOString() },
-        { id: 'm3-2', senderId: 'me', content: 'Ben de çok keyif aldım! Bir sonraki ders için ne zaman müsaitsiniz?', isMe: true, created_at: new Date(Date.now() - 1000 * 60 * 60 * 24.5).toISOString() },
-        { id: 'm3-3', senderId: 'u3', content: 'Yoga dersi için teşekkür ederim!', isMe: false, created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
-    ],
-    conv4: [
-        { id: 'm4-1', senderId: 'me', content: 'Merhaba! Logo tasarımı için başvurmak istiyorum.', isMe: true, created_at: new Date(Date.now() - 1000 * 60 * 60 * 50).toISOString() },
-        { id: 'm4-2', senderId: 'u4', content: 'Merhaba! Hangi sektör için logo düşünüyorsunuz?', isMe: false, created_at: new Date(Date.now() - 1000 * 60 * 60 * 49).toISOString() },
-        { id: 'm4-3', senderId: 'u4', content: 'Logo tasarımını haftaya teslim edebilirim.', isMe: false, created_at: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString() },
-    ],
+    last_message: string
+    last_message_at: string
+    unread_count: number
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -59,72 +30,189 @@ interface MessagesState {
     conversations: Conversation[]
     messages: Record<string, ChatMessage[]>
     totalUnread: number
-    /** Bir ilan için konuşma oluşturur ya da varsa mevcut conv ID'yi döner */
-    addOrGetConversation: (data: Omit<Conversation, 'lastMessage' | 'lastMessageTime' | 'unread'>) => string
-    addMessage: (convId: string, msg: ChatMessage) => void
-    markAllRead: (convId: string) => void
+    isLoading: boolean
+
+    // Actions
+    fetchConversations: (userId: string) => Promise<void>
+    fetchMessages: (conversationId: string) => Promise<void>
+    sendMessage: (conversationId: string, content: string, senderId: string) => Promise<void>
+    getOrCreateConversation: (listingId: string, buyerId: string, sellerId: string) => Promise<string>
+    markAsRead: (conversationId: string, userId: string) => Promise<void>
+    subscribeToMessages: (userId: string) => () => void
 }
 
-export const useMessagesStore = create<MessagesState>()(
-    persist(
-        (set, get) => ({
-            conversations: INITIAL_CONVERSATIONS,
-            messages: INITIAL_MESSAGES,
-            totalUnread: INITIAL_CONVERSATIONS.reduce((acc, c) => acc + c.unread, 0),
+export const useMessagesStore = create<MessagesState>((set, get) => ({
+    conversations: [],
+    messages: {},
+    totalUnread: 0,
+    isLoading: false,
 
-            addOrGetConversation: (data) => {
-                const existing = get().conversations.find(c => c.listingId === data.listingId)
-                if (existing) return existing.id
+    fetchConversations: async (userId) => {
+        set({ isLoading: true })
+        try {
+            const { data, error } = await supabase
+                .from('conversations')
+                .select(`
+                    *,
+                    listing:listings(title, duration_hrs),
+                    buyer:users!conversations_buyer_id_fkey(id, full_name, avatar_url),
+                    seller:users!conversations_seller_id_fkey(id, full_name, avatar_url)
+                `)
+                .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
+                .order('last_message_at', { ascending: false })
 
-                const newConv: Conversation = {
-                    ...data,
-                    lastMessage: 'Yeni konuşma başlatıldı.',
-                    lastMessageTime: new Date().toISOString(),
-                    unread: 0,
+            if (error) throw error
+
+            const formattedConvs: Conversation[] = data.map(c => {
+                const isBuyer = c.buyer_id === userId
+                const participant = isBuyer ? c.seller : c.buyer
+                return {
+                    id: c.id,
+                    listing_id: c.listing_id,
+                    listing_title: c.listing?.title || 'İlan Silinmiş',
+                    listing_credits: c.listing?.duration_hrs || 0,
+                    participant: {
+                        id: participant.id,
+                        name: participant.full_name,
+                        avatar: participant.avatar_url
+                    },
+                    last_message: c.last_message || '',
+                    last_message_at: c.last_message_at,
+                    unread_count: 0 // Simplification for now
                 }
-                set((s) => ({
-                    conversations: [newConv, ...s.conversations],
-                    messages: { ...s.messages, [newConv.id]: [] },
-                }))
-                return newConv.id
-            },
+            })
 
-            addMessage: (convId, msg) => {
-                set((s) => {
-                    const existing = s.messages[convId] ?? []
-                    const updatedMessages = { ...s.messages, [convId]: [...existing, msg] }
-                    const updatedConvs = s.conversations.map(c =>
-                        c.id === convId
-                            ? { ...c, lastMessage: msg.content, lastMessageTime: msg.created_at }
-                            : c
-                    )
-                    // En son konuşmayı üste taşı
-                    const sorted = [...updatedConvs].sort(
-                        (a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
-                    )
-                    return { messages: updatedMessages, conversations: sorted }
-                })
-            },
-
-            markAllRead: (convId) => {
-                set((s) => {
-                    const updatedConvs = s.conversations.map(c =>
-                        c.id === convId ? { ...c, unread: 0 } : c
-                    )
-                    const total = updatedConvs.reduce((acc, c) => acc + c.unread, 0)
-                    return { conversations: updatedConvs, totalUnread: total }
-                })
-            },
-        }),
-        {
-            name: 'zaman-bankasi-messages',
-            // messages objesini de persist et
-            partialize: (s) => ({ conversations: s.conversations, messages: s.messages }),
-            onRehydrateStorage: () => (state) => {
-                if (state) {
-                    state.totalUnread = state.conversations.reduce((acc, c) => acc + c.unread, 0)
-                }
-            },
+            set({ conversations: formattedConvs })
+        } catch (error) {
+            console.error('Error fetching conversations:', error)
+        } finally {
+            set({ isLoading: false })
         }
-    )
-)
+    },
+
+    fetchMessages: async (conversationId) => {
+        try {
+            const { data, error } = await supabase
+                .from('messages')
+                .select('*')
+                .eq('conversation_id', conversationId)
+                .order('created_at', { ascending: true })
+
+            if (error) throw error
+
+            set(state => ({
+                messages: { ...state.messages, [conversationId]: data }
+            }))
+        } catch (error) {
+            console.error('Error fetching messages:', error)
+        }
+    },
+
+    sendMessage: async (conversationId, content, senderId) => {
+        try {
+            const { data, error } = await supabase
+                .from('messages')
+                .insert({
+                    conversation_id: conversationId,
+                    sender_id: senderId,
+                    content
+                })
+                .select()
+                .single()
+
+            if (error) throw error
+
+            // Update conversation last message local and remote
+            await supabase
+                .from('conversations')
+                .update({
+                    last_message: content,
+                    last_message_at: new Date().toISOString()
+                })
+                .eq('id', conversationId)
+
+            // Local update (Realtime will also pick this up if subscribed)
+            set(state => ({
+                messages: {
+                    ...state.messages,
+                    [conversationId]: [...(state.messages[conversationId] || []), data]
+                },
+                conversations: state.conversations.map(c =>
+                    c.id === conversationId
+                        ? { ...c, last_message: content, last_message_at: data.created_at }
+                        : c
+                ).sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
+            }))
+        } catch (error) {
+            console.error('Error sending message:', error)
+        }
+    },
+
+    getOrCreateConversation: async (listingId, buyerId, sellerId) => {
+        // Try to find existing
+        const { data: existing, error: findError } = await supabase
+            .from('conversations')
+            .select('id')
+            .eq('listing_id', listingId)
+            .eq('buyer_id', buyerId)
+            .eq('seller_id', sellerId)
+            .maybeSingle()
+
+        if (existing) return existing.id
+
+        // Create new
+        const { data: newConv, error: createError } = await supabase
+            .from('conversations')
+            .insert({
+                listing_id: listingId,
+                buyer_id: buyerId,
+                seller_id: sellerId
+            })
+            .select('id')
+            .single()
+
+        if (createError) throw createError
+        return newConv.id
+    },
+
+    markAsRead: async (conversationId, userId) => {
+        // Implementation for unread logic
+    },
+
+    subscribeToMessages: (userId) => {
+        const channel = supabase
+            .channel('realtime_messages')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages'
+                },
+                async (payload: RealtimePostgresInsertPayload<ChatMessage>) => {
+                    const newMsg = payload.new
+
+                    // Add to message list if in cache
+                    set(state => {
+                        const convMsgs = state.messages[newMsg.conversation_id] || []
+                        if (convMsgs.some(m => m.id === newMsg.id)) return state
+
+                        return {
+                            messages: {
+                                ...state.messages,
+                                [newMsg.conversation_id]: [...convMsgs, newMsg]
+                            }
+                        }
+                    })
+
+                    // Refresh conversations to get latest last_message
+                    get().fetchConversations(userId)
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }
+}))

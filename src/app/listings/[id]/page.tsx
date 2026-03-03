@@ -3,11 +3,12 @@
 import { use, useState } from 'react'
 import { notFound, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Clock, MapPin, Star, Tag, Eye, MessageCircle, Heart, Share2, ShieldCheck, Calendar } from 'lucide-react'
+import { Clock, MapPin, Star, Tag, Eye, MessageCircle, Heart, Share2, ShieldCheck, Calendar, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { timeAgo } from '@/lib/utils'
 import { useListingsStore } from '@/store/listingsStore'
 import { useMessagesStore } from '@/store/messagesStore'
+import { useAuthStore } from '@/store/authStore'
 
 const CATEGORY_ICONS: Record<string, string> = {
     'Eğitim': '📚', 'Tamirat': '🔧', 'Dijital': '💻',
@@ -45,35 +46,40 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
     const router = useRouter()
 
     const listings = useListingsStore((s) => s.listings)
-    const addOrGetConversation = useMessagesStore((s) => s.addOrGetConversation)
+    const { getOrCreateConversation } = useMessagesStore()
+    const currentUser = useAuthStore(s => s.user)
 
     const listing = listings.find(l => l.id === id)
     const [saved, setSaved] = useState(false)
-    const [messageSent, setMessageSent] = useState(false)
+    const [isStartingChat, setIsStartingChat] = useState(false)
 
     if (!listing) notFound()
 
     const colorClass = CATEGORY_COLORS[listing.category] ?? CATEGORY_COLORS['Diğer']
     const icon = CATEGORY_ICONS[listing.category] ?? '✨'
-    const user = listing.user
+    const seller = listing.user
     const related = listings.filter(l => l.id !== id && l.category === listing.category && l.status === 'active').slice(0, 3)
 
-    const handleSendMessage = () => {
-        setMessageSent(true)
-        // Konuşma oluştur ya da mevcut olanı bul
-        const convId = addOrGetConversation({
-            id: `conv-${listing.id}`,
-            listingId: listing.id,
-            listingTitle: listing.title,
-            listingCredits: listing.duration_hrs,
-            participant: {
-                id: user?.id ?? 'unknown',
-                name: user?.full_name ?? 'Kullanıcı',
-                avatar: user?.avatar_url ?? null,
-            },
-        })
-        // Kısa bir süre sonra mesajlar sayfasına git
-        setTimeout(() => router.push(`/messages/${convId}`), 1000)
+    const handleSendMessage = async () => {
+        if (!currentUser) {
+            router.push('/login')
+            return
+        }
+        if (currentUser.id === seller?.id) {
+            alert('Kendi ilanınıza mesaj gönderemezsiniz.')
+            return
+        }
+
+        setIsStartingChat(true)
+        try {
+            const convId = await getOrCreateConversation(listing.id, currentUser.id, seller?.id || 'unknown')
+            router.push(`/messages/${convId}`)
+        } catch (error) {
+            console.error('Error starting conversation:', error)
+            alert('Mesajlaşma başlatılamadı.')
+        } finally {
+            setIsStartingChat(false)
+        }
     }
 
     return (
@@ -118,7 +124,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                         <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400">
                             <span className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" />{listing.view_count} görüntülenme</span>
                             <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />{timeAgo(listing.created_at)}</span>
-                            {user?.city && <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{user.city}</span>}
+                            {seller?.city && <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{seller.city}</span>}
                         </div>
 
                         <div className="pt-2 border-t border-white/5">
@@ -178,10 +184,10 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                             <p className="text-slate-500 text-xs">kredi karşılığında</p>
                         </div>
 
-                        {messageSent ? (
-                            <div className="w-full py-3 rounded-xl bg-green-500/15 border border-green-500/30 text-green-400 text-sm font-semibold flex items-center justify-center gap-2">
-                                <ShieldCheck className="w-4 h-4" />
-                                Mesajlara yönlendiriliyorsunuz…
+                        {isStartingChat ? (
+                            <div className="w-full py-3 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 text-sm font-semibold flex items-center justify-center gap-2">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Sohbet başlatılıyor…
                             </div>
                         ) : (
                             <button onClick={handleSendMessage}
@@ -201,22 +207,26 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                         </div>
                     </div>
 
-                    {user && (
+                    {seller && (
                         <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3">
                             <h3 className="text-slate-300 text-sm font-semibold uppercase tracking-wider">İlan Sahibi</h3>
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white font-bold">
-                                    {user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                                </div>
+                                {seller.avatar_url ? (
+                                    <img src={seller.avatar_url} alt={seller.full_name} className="w-12 h-12 rounded-xl object-cover" />
+                                ) : (
+                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white font-bold">
+                                        {seller.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                    </div>
+                                )}
                                 <div>
-                                    <p className="text-white font-semibold">{user.full_name}</p>
-                                    {user.city && <p className="text-slate-500 text-xs flex items-center gap-1"><MapPin className="w-3 h-3" />{user.city}</p>}
+                                    <p className="text-white font-semibold">{seller.full_name}</p>
+                                    {seller.city && <p className="text-slate-500 text-xs flex items-center gap-1"><MapPin className="w-3 h-3" />{seller.city}</p>}
                                 </div>
                             </div>
-                            {user.rating_avg && (
+                            {seller.rating_avg && (
                                 <div className="flex items-center gap-2">
-                                    <StarDisplay rating={user.rating_avg} />
-                                    <span className="text-white text-sm font-semibold">{user.rating_avg.toFixed(1)}</span>
+                                    <StarDisplay rating={seller.rating_avg} />
+                                    <span className="text-white text-sm font-semibold">{seller.rating_avg.toFixed(1)}</span>
                                     <span className="text-slate-500 text-xs">/5.0</span>
                                 </div>
                             )}

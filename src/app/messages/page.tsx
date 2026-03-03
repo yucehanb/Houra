@@ -1,11 +1,20 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useMessagesStore } from '@/store/messagesStore'
+import { useAuthStore } from '@/store/authStore'
 import { ConversationList } from '@/components/messages/ConversationList'
-import { MessageCircle } from 'lucide-react'
+import { MessageCircle, Loader2 } from 'lucide-react'
 
 export default function MessagesPage() {
-    const { conversations, totalUnread } = useMessagesStore()
+    const { conversations, totalUnread, fetchConversations, isLoading } = useMessagesStore()
+    const user = useAuthStore(s => s.user)
+
+    useEffect(() => {
+        if (user?.id) {
+            fetchConversations(user.id)
+        }
+    }, [user?.id, fetchConversations])
 
     return (
         <div className="flex h-full overflow-hidden">
@@ -19,7 +28,15 @@ export default function MessagesPage() {
                         <div>
                             <h1 className="text-white font-bold text-base">Mesajlar</h1>
                             <p className="text-slate-500 text-xs">
-                                {totalUnread > 0 ? <span className="text-purple-400 font-semibold">{totalUnread}</span> : '0'} okunmamış
+                                {isLoading ? (
+                                    <span className="flex items-center gap-1">
+                                        <Loader2 className="w-2.5 h-2.5 animate-spin" /> Yükleniyor
+                                    </span>
+                                ) : (
+                                    <>
+                                        {totalUnread > 0 ? <span className="text-purple-400 font-semibold">{totalUnread}</span> : '0'} okunmamış
+                                    </>
+                                )}
                             </p>
                         </div>
                     </div>

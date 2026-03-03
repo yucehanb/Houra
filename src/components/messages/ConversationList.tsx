@@ -49,10 +49,14 @@ export function ConversationList({ conversations, activeId }: Props) {
                             isActive && 'bg-purple-600/10 hover:bg-purple-600/15 border-l-2 border-purple-500'
                         )}>
                         <div className="relative flex-shrink-0">
-                            <Avatar name={conv.participant.name} />
-                            {conv.unread > 0 && (
+                            {conv.participant.avatar ? (
+                                <img src={conv.participant.avatar} alt={conv.participant.name} className="w-10 h-10 rounded-full object-cover" />
+                            ) : (
+                                <Avatar name={conv.participant.name} />
+                            )}
+                            {conv.unread_count > 0 && (
                                 <span className="absolute -top-1 -right-1 w-4.5 h-4.5 min-w-[18px] px-0.5 bg-purple-500 rounded-full text-white text-[9px] font-bold flex items-center justify-center">
-                                    {conv.unread}
+                                    {conv.unread_count}
                                 </span>
                             )}
                         </div>
@@ -61,11 +65,13 @@ export function ConversationList({ conversations, activeId }: Props) {
                                 <p className={cn('text-sm font-semibold truncate', isActive ? 'text-purple-200' : 'text-white')}>
                                     {conv.participant.name}
                                 </p>
-                                <span className="text-slate-600 text-xs flex-shrink-0">{timeAgo(conv.lastMessageTime)}</span>
+                                <span className="text-slate-600 text-xs flex-shrink-0">
+                                    {conv.last_message_at ? timeAgo(conv.last_message_at) : ''}
+                                </span>
                             </div>
-                            <p className="text-slate-500 text-xs truncate mb-0.5">{conv.listingTitle}</p>
-                            <p className={cn('text-xs truncate', conv.unread > 0 ? 'text-slate-300 font-medium' : 'text-slate-500')}>
-                                {conv.lastMessage}
+                            <p className="text-slate-500 text-xs truncate mb-0.5">{conv.listing_title}</p>
+                            <p className={cn('text-xs truncate', conv.unread_count > 0 ? 'text-slate-300 font-medium' : 'text-slate-500')}>
+                                {conv.last_message || 'Henüz mesaj yok'}
                             </p>
                         </div>
                     </Link>
