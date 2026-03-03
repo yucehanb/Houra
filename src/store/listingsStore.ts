@@ -18,10 +18,8 @@ interface ListingsState {
     addListing: (listing: Listing) => void
     createListing: (listingData: any) => Promise<Listing>
     updateListingStatus: (id: string, status: Listing['status']) => void
-    removeListing: (id: string) => void
+    removeListing: (id: string) => Promise<void>
 }
-
-const supabase = createClient()
 
 export const useListingsStore = create<ListingsState>()(
     persist(
@@ -32,6 +30,7 @@ export const useListingsStore = create<ListingsState>()(
             fetchListings: async () => {
                 set({ isLoading: true })
                 try {
+                    const supabase = createClient()
                     const { data, error } = await supabase
                         .from('listings')
                         .select('*, user:users(id, full_name, avatar_url, rating_avg, city)')
@@ -50,6 +49,7 @@ export const useListingsStore = create<ListingsState>()(
             createListing: async (listingData) => {
                 set({ isLoading: true })
                 try {
+                    const supabase = createClient()
                     const { data, error } = await supabase
                         .from('listings')
                         .insert(listingData)
@@ -78,8 +78,17 @@ export const useListingsStore = create<ListingsState>()(
                 set((s) => ({
                     listings: s.listings.map(l => l.id === id ? { ...l, status } : l),
                 })),
-            removeListing: (id) =>
-                set((s) => ({ listings: s.listings.filter(l => l.id !== id) })),
+            removeListing: async (id) => {
+                try {
+                    const supabase = createClient()
+                    const { error } = await supabase.from('listings').delete().eq('id', id)
+                    if (error) throw error
+                    set((s) => ({ listings: s.listings.filter(l => l.id !== id) }))
+                } catch (err) {
+                    console.error('İlan silinirken hata oluştu:', err)
+                    throw err
+                }
+            },
         }),
         { name: 'houra-listings' } // Rebranded store name
     )
