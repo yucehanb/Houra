@@ -38,6 +38,8 @@ interface MessagesState {
     sendMessage: (conversationId: string, content: string, senderId: string) => Promise<void>
     getOrCreateConversation: (listingId: string, buyerId: string, sellerId: string) => Promise<string>
     markAsRead: (conversationId: string, userId: string) => Promise<void>
+
+    activeSubscription: any
     subscribeToMessages: (userId: string) => () => void
 }
 
@@ -179,7 +181,14 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
         // Implementation for unread logic
     },
 
+    activeSubscription: null as ReturnType<typeof supabase.channel> | null,
+
     subscribeToMessages: (userId) => {
+        // Zaten aktif bir bağlantı varsa tekrar oluşturma
+        if (get().activeSubscription) {
+            return () => { }; // Empty cleanup
+        }
+
         const channel = supabase
             .channel('realtime_messages')
             .on(
@@ -211,8 +220,11 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
             )
             .subscribe()
 
+        set({ activeSubscription: channel })
+
         return () => {
             supabase.removeChannel(channel)
+            set({ activeSubscription: null })
         }
     }
 }))
