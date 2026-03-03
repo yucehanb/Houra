@@ -188,6 +188,13 @@ export function ProfileView() {
 
     useEffect(() => {
         fetchProfile()
+
+        // Safety timeout: Eğer 5 saniye içinde profil yüklenmezse dönen simgeyi kaldır
+        const timeout = setTimeout(() => {
+            setIsLoading(false)
+        }, 5000)
+
+        return () => clearTimeout(timeout)
     }, [])
 
     // Update local profile state when authUser changes from AuthProvider
