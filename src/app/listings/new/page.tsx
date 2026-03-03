@@ -11,13 +11,8 @@ export const metadata: Metadata = {
 export default function NewListingPage() {
     return (
         <div className="space-y-6 pt-2">
-            <div className="flex items-center gap-3">
-                <Link href="/listings" className="flex items-center gap-1 text-slate-400 hover:text-white text-sm transition-colors group">
-                    <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-                    İlanlarım
-                </Link>
-                <span className="text-slate-600">/</span>
-                <h1 className="text-white font-semibold">Yeni İlan</h1>
+            <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-white font-bold text-2xl">Yeni İlan Ver</h1>
             </div>
             <NewListingForm />
         </div>
