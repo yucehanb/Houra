@@ -53,14 +53,18 @@ export const useListingsStore = create<ListingsState>()(
                     const { data, error } = await supabase
                         .from('listings')
                         .insert(listingData)
-                        .select('*, user:users(id, full_name, avatar_url, rating_avg, city)')
+                        .select()
                         .single()
 
                     if (error) throw error
 
                     if (data) {
-                        set((s) => ({ listings: [data as Listing, ...s.listings] }))
-                        return data as Listing
+                        const tempListing = {
+                            ...data,
+                            user: { id: listingData.user_id, full_name: 'Yükleniyor...', avatar_url: null, rating_avg: 0, city: null }
+                        }
+                        set((s) => ({ listings: [tempListing as Listing, ...s.listings] }))
+                        return tempListing as Listing
                     }
                     throw new Error('İlan oluşturulamadı (boş veri döndü)')
                 } catch (err) {
