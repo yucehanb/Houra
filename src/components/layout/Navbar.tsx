@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useTransition } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Clock, Home, PlusSquare, MessageCircle, User, LogOut } from 'lucide-react'
@@ -7,7 +8,6 @@ import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
 import { useMessagesStore } from '@/store/messagesStore'
 import { signOut } from '@/lib/supabase/actions'
-import { useTransition } from 'react'
 
 const NAV_HREFS = [
     { href: '/dashboard', label: 'Keşfet', icon: Home },
@@ -19,8 +19,15 @@ const NAV_HREFS = [
 export function Navbar() {
     const pathname = usePathname()
     const user = useAuthStore((s) => s.user)
-    const totalUnread = useMessagesStore((s) => s.totalUnread)
+    const { totalUnread, subscribeToMessages } = useMessagesStore()
     const [isPending, startTransition] = useTransition()
+
+    useEffect(() => {
+        if (user?.id) {
+            const unsubscribe = subscribeToMessages(user.id)
+            return () => unsubscribe()
+        }
+    }, [user?.id, subscribeToMessages])
 
     function handleSignOut() {
         startTransition(async () => { await signOut() })

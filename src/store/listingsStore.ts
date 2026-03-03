@@ -16,6 +16,7 @@ interface ListingsState {
     setListings: (listings: Listing[]) => void
     fetchListings: () => Promise<void>
     addListing: (listing: Listing) => void
+    createListing: (listingData: any) => Promise<Listing>
     updateListingStatus: (id: string, status: Listing['status']) => void
     removeListing: (id: string) => void
 }
@@ -46,6 +47,29 @@ export const useListingsStore = create<ListingsState>()(
             },
             addListing: (listing) =>
                 set((s) => ({ listings: [listing, ...s.listings] })),
+            createListing: async (listingData) => {
+                set({ isLoading: true })
+                try {
+                    const { data, error } = await supabase
+                        .from('listings')
+                        .insert(listingData)
+                        .select('*, user:users(id, full_name, avatar_url, rating_avg, city)')
+                        .single()
+
+                    if (error) throw error
+
+                    if (data) {
+                        set((s) => ({ listings: [data as Listing, ...s.listings] }))
+                        return data as Listing
+                    }
+                    throw new Error('İlan oluşturulamadı (boş veri döndü)')
+                } catch (err) {
+                    console.error('İlan oluşturulurken hata:', err)
+                    throw err
+                } finally {
+                    set({ isLoading: false })
+                }
+            },
             updateListingStatus: (id, status) =>
                 set((s) => ({
                     listings: s.listings.map(l => l.id === id ? { ...l, status } : l),

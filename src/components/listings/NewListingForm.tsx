@@ -33,12 +33,13 @@ const DURATION_OPTIONS = [0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 10]
 
 export function NewListingForm() {
     const router = useRouter()
-    const addListing = useListingsStore((s) => s.addListing)
+    const { addListing, createListing } = useListingsStore()
 
     const [step, setStep] = useState(1)
     const [tagInput, setTagInput] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitted, setSubmitted] = useState(false)
+    const [submitError, setSubmitError] = useState<string | null>(null)
 
     const form = useForm<ListingFormData>({
         resolver: zodResolver(listingSchema),
@@ -74,37 +75,32 @@ export function NewListingForm() {
         }
 
         setIsSubmitting(true)
+        setSubmitError(null)
 
         try {
-            // Supabase'e Kaydet
-            const { data: newListing, error } = await supabase
-                .from('listings')
-                .insert({
-                    user_id: user.id,
-                    title: values.title,
-                    description: values.description,
-                    category: values.category,
-                    type: values.type,
-                    duration_hrs: values.duration_hrs,
-                    tags: values.tags,
-                    status: 'active',
-                })
-                .select('*, user:users(id, full_name, avatar_url, rating_avg, city)')
-                .single()
+            // 15 saniyelik bir zaman aşımı ekleyelim (Supabase bazen geç dönebiliyor)
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('İstek zaman aşımına uğradı (15s).')), 15000)
+            )
 
-            if (error) throw error
+            const insertPromise = createListing({
+                user_id: user.id,
+                title: values.title,
+                description: values.description,
+                category: values.category,
+                type: values.type,
+                duration_hrs: values.duration_hrs,
+                tags: values.tags,
+                status: 'active',
+            })
 
-            // Store'a ekle (Real-time feed için)
-            if (newListing) {
-                addListing(newListing as any)
-            }
+            await Promise.race([insertPromise, timeoutPromise])
 
             setSubmitted(true)
             setTimeout(() => router.push('/dashboard'), 1500)
         } catch (err: any) {
             console.error('İlan yayınlanırken hata oluştu:', err)
-            const errMsg = err.message || 'Bilinmeyen bir hata oluştu.'
-            alert(`İlan yayınlanırken bir hata oluştu: ${errMsg}\n\nLütfen SQL kodunu Supabase'de çalıştırdığınızdan emin olun.`)
+            setSubmitError(err.message || 'Bir hata oluştu. Lütfen tekrar deneyin.')
         } finally {
             setIsSubmitting(false)
         }
@@ -277,6 +273,13 @@ export function NewListingForm() {
                                 </div>
                             )}
                         </div>
+                    </div>
+                )}
+
+                {/* Hata Mesajı */}
+                {submitError && (
+                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl mb-4">
+                        <p className="text-red-400 text-sm font-medium">{submitError}</p>
                     </div>
                 )}
 
