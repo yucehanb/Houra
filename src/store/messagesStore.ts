@@ -60,6 +60,7 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
 
     fetchConversations: async (userId) => {
         set({ isLoading: true })
+        console.log('[fetchConversations] Başlıyor, userId:', userId)
         try {
             const { data, error } = await supabase
                 .from('conversations')
@@ -72,17 +73,26 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
                 .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
                 .order('last_message_at', { ascending: false })
 
-            if (error) throw error
+            if (error) {
+                console.error('[fetchConversations] Supabase çekme hatası:', error)
+                throw error
+            }
+
+            console.log('[fetchConversations] Veri geldi, liste uzunluğu:', data?.length)
 
             // Her konuşma için okunmamış mesaj sayısını çek
             const unreadCounts = await Promise.all(
                 data.map(async (c) => {
-                    const { count } = await supabase
+                    const { count, error: countErr } = await supabase
                         .from('messages')
                         .select('id', { count: 'exact', head: true })
                         .eq('conversation_id', c.id)
                         .eq('is_read', false)
                         .neq('sender_id', userId)
+
+                    if (countErr) {
+                        console.error(`[fetchConversations] Unread count hatası (conv ${c.id}):`, countErr)
+                    }
                     return { id: c.id, count: count ?? 0 }
                 })
             )
@@ -97,9 +107,9 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
                     listing_title: c.listing?.title || 'İlan Silinmiş',
                     listing_credits: c.listing?.duration_hrs || 0,
                     participant: {
-                        id: participant.id,
-                        name: participant.full_name,
-                        avatar: participant.avatar_url
+                        id: participant?.id || 'silinmis-kullanici',
+                        name: participant?.full_name || 'Silinmiş Kullanıcı',
+                        avatar: participant?.avatar_url || null
                     },
                     last_message: c.last_message || '',
                     last_message_at: c.last_message_at,
@@ -112,10 +122,12 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
             })
 
             const totalUnread = formattedConvs.reduce((sum, c) => sum + c.unread_count, 0)
+            console.log('[fetchConversations] Başarılı. formattedConvs:', formattedConvs.length)
             set({ conversations: formattedConvs, totalUnread })
-        } catch (error) {
-            console.error('Error fetching conversations:', error)
+        } catch (error: any) {
+            console.error('[fetchConversations] Genel Hata:', error, error?.message)
         } finally {
+            console.log('[fetchConversations] isLoading false yapılıyor')
             set({ isLoading: false })
         }
     },
