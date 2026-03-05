@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { timeAgo } from '@/lib/utils'
 import type { Conversation } from '@/store/messagesStore'
+import { useMessagesStore } from '@/store/messagesStore'
+import { X } from 'lucide-react'
 
 // Avatar bileşeni — diğer dosyalar da import edebilir
 export function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' }) {
@@ -26,6 +28,7 @@ interface Props {
 
 export function ConversationList({ conversations, activeId }: Props) {
     const pathname = usePathname()
+    const deleteConversation = useMessagesStore(s => s.deleteConversation)
 
     if (conversations.length === 0) {
         return (
@@ -45,7 +48,7 @@ export function ConversationList({ conversations, activeId }: Props) {
                 const isActive = activeId === conv.id || pathname === `/messages/${conv.id}`
                 return (
                     <Link key={conv.id} href={`/messages/${conv.id}`}
-                        className={cn('flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-white/5',
+                        className={cn('group relative flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-white/5',
                             isActive && 'bg-purple-600/10 hover:bg-purple-600/15 border-l-2 border-purple-500'
                         )}>
                         <div className="relative flex-shrink-0">
@@ -74,6 +77,19 @@ export function ConversationList({ conversations, activeId }: Props) {
                                 {conv.last_message || 'Henüz mesaj yok'}
                             </p>
                         </div>
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                if (window.confirm('Bu konuşmayı listenden silmek istediğine emin misin?')) {
+                                    deleteConversation(conv.id)
+                                }
+                            }}
+                            title="Konuşmayı Sil"
+                            className="opacity-0 group-hover:opacity-100 flex-shrink-0 p-1.5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg transition-all absolute right-4 top-1/2 -translate-y-1/2"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
                     </Link>
                 )
             })}

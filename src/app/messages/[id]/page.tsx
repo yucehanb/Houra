@@ -50,6 +50,9 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
                     participant={conv.participant}
                     listingTitle={conv.listing_title || ''}
                     listingCredits={conv.listing_credits || 0}
+                    convStatus={conv.conv_status}
+                    buyerId={conv.buyer_id}
+                    sellerId={conv.seller_id}
                 />
             </div>
         </div>

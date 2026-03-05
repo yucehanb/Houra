@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { use, useState, useEffect } from 'react'
 import { notFound, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Clock, MapPin, Star, Tag, Eye, MessageCircle, Heart, Share2, ShieldCheck, Calendar, Loader2 } from 'lucide-react'
@@ -9,6 +9,7 @@ import { timeAgo } from '@/lib/utils'
 import { useListingsStore } from '@/store/listingsStore'
 import { useMessagesStore } from '@/store/messagesStore'
 import { useAuthStore } from '@/store/authStore'
+import { createClient } from '@/lib/supabase/client'
 
 const CATEGORY_ICONS: Record<string, string> = {
     'Eğitim': '📚', 'Tamirat': '🔧', 'Dijital': '💻',
@@ -26,10 +27,7 @@ const CATEGORY_COLORS: Record<string, string> = {
     'Diğer': 'bg-slate-500/15 text-slate-400 border-slate-500/20',
 }
 
-const MOCK_REVIEWS = [
-    { id: 'r1', reviewer: 'Fatma Demir', rating: 5, comment: 'Gerçekten çok yardımcı oldu, kesinlikle tavsiye ederim!', date: new Date(Date.now() - 86400000 * 3).toISOString() },
-    { id: 'r2', reviewer: 'Can Öztürk', rating: 4, comment: 'Sabırlı ve açıklayıcıydı, memnun kaldım.', date: new Date(Date.now() - 86400000 * 10).toISOString() },
-]
+// MOCK_REVIEWS kaldırıldı
 
 function StarDisplay({ rating }: { rating: number }) {
     return (
@@ -52,6 +50,10 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
     const listing = listings.find(l => l.id === id)
     const [saved, setSaved] = useState(false)
     const [isStartingChat, setIsStartingChat] = useState(false)
+    const [reviews, setReviews] = useState<any[]>([])
+    const [isLoadingReviews, setIsLoadingReviews] = useState(true)
+
+    const supabase = createClient()
 
     if (!listing) notFound()
 
@@ -59,6 +61,32 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
     const icon = CATEGORY_ICONS[listing.category] ?? '✨'
     const seller = listing.user
     const related = listings.filter(l => l.id !== id && l.category === listing.category && l.status === 'active').slice(0, 3)
+
+    useEffect(() => {
+        const fetchReviews = async () => {
+            if (!seller?.id) return
+            try {
+                const { data } = await supabase
+                    .from('reviews')
+                    .select(`
+                    id,
+                    rating,
+                    comment,
+                    created_at,
+                    reviewer:reviewer_id(full_name, avatar_url)
+                `)
+                    .eq('reviewed_id', seller.id)
+                    .order('created_at', { ascending: false })
+
+                if (data) setReviews(data)
+            } catch (err) {
+                console.error('Error loading reviews:', err)
+            } finally {
+                setIsLoadingReviews(false)
+            }
+        }
+        fetchReviews()
+    }, [seller?.id, supabase])
 
     const handleSendMessage = async () => {
         if (!currentUser) {
@@ -72,7 +100,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
 
         setIsStartingChat(true)
         try {
-            const convId = await getOrCreateConversation(listing.id, currentUser.id, seller?.id || 'unknown')
+            const convId = await getOrCreateConversation(listing.id, currentUser.id, seller?.id || 'unknown', listing.duration_hrs)
             router.push(`/messages/${convId}`)
         } catch (error) {
             console.error('Error starting conversation:', error)
@@ -150,25 +178,47 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
                         <h2 className="text-white font-bold flex items-center gap-2">
                             <Star className="w-4 h-4 text-yellow-400" />Değerlendirmeler
-                            <span className="text-slate-500 font-normal text-sm">({MOCK_REVIEWS.length})</span>
+                            <span className="text-slate-500 font-normal text-sm">({reviews.length})</span>
                         </h2>
-                        <div className="space-y-3">
-                            {MOCK_REVIEWS.map(r => (
-                                <div key={r.id} className="bg-white/5 rounded-xl p-4 space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold">
-                                                {r.reviewer.split(' ').map(n => n[0]).join('')}
+
+                        {isLoadingReviews ? (
+                            <div className="text-center py-6">
+                                <Loader2 className="w-6 h-6 animate-spin text-purple-400 mx-auto" />
+                                <p className="text-slate-400 text-sm mt-3 border-none bg-transparent">Yorumlar yükleniyor...</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {reviews.length > 0 ? (
+                                    reviews.map(r => (
+                                        <div key={r.id} className="bg-white/5 border border-white/5 rounded-xl p-4 space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shadow-md shadow-purple-500/20">
+                                                        {r.reviewer?.avatar_url ? (
+                                                            <img src={r.reviewer.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            r.reviewer?.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '?'
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-slate-200 text-sm font-semibold">{r.reviewer?.full_name || 'Gizli Kullanıcı'}</span>
+                                                        <p className="text-slate-500 text-[11px] mt-0.5">{timeAgo(r.created_at)}</p>
+                                                    </div>
+                                                </div>
+                                                <StarDisplay rating={r.rating} />
                                             </div>
-                                            <span className="text-slate-300 text-sm font-medium">{r.reviewer}</span>
-                                            <span className="text-slate-600 text-xs">{timeAgo(r.date)}</span>
+                                            {r.comment && (
+                                                <p className="text-slate-300 text-sm leading-relaxed mt-2 p-3 bg-white/[0.02] rounded-lg">{r.comment}</p>
+                                            )}
                                         </div>
-                                        <StarDisplay rating={r.rating} />
+                                    ))
+                                ) : (
+                                    <div className="text-center py-6 bg-white/[0.02] rounded-xl border border-white/5">
+                                        <p className="text-slate-400 text-sm">Bu ilana henüz değerlendirme yapılmamış.</p>
                                     </div>
-                                    <p className="text-slate-400 text-sm">{r.comment}</p>
-                                </div>
-                            ))}
-                        </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 

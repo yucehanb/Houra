@@ -35,8 +35,6 @@ const EMPTY_PROFILE = {
     created_at: '',
 }
 
-const MOCK_REVIEWS: any[] = []
-
 function AvatarLarge({ name, avatarUrl, onUpload, isUploading }: { name: string, avatarUrl?: string | null, onUpload?: (file: File) => void, isUploading?: boolean }) {
     const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
     const inputRef = useRef<HTMLInputElement>(null)
@@ -94,6 +92,7 @@ export function ProfileView() {
     }
 
     const [activeTab, setActiveTab] = useState<'listings' | 'reviews'>('listings')
+    const [reviews, setReviews] = useState<any[]>([])
     const [isEditing, setIsEditing] = useState(false)
     const [profile, setProfile] = useState(() => {
         if (authUser) {
@@ -164,6 +163,22 @@ export function ProfileView() {
                     skills: data.skills || [],
                     needs: data.needs || [],
                 })
+
+                // Yorumları (Reviews) çek
+                const { data: reviewsData } = await supabase
+                    .from('reviews')
+                    .select(`
+                        id,
+                        rating,
+                        comment,
+                        created_at,
+                        reviewer:reviewer_id(full_name, avatar_url)
+                    `)
+                    .eq('reviewed_id', id)
+                    .order('created_at', { ascending: false })
+
+                if (reviewsData) setReviews(reviewsData)
+
             } else {
                 // Kullanıcı var ama tabloda kaydı yoksa (İlk giriş)
                 const newUserProfile = {
@@ -564,7 +579,7 @@ export function ProfileView() {
                                 activeTab === 'reviews' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white')}
                         >
                             <MessageSquare className="w-4 h-4" />
-                            Değerlendirmeler <span className="px-1.5 py-0.5 rounded-md bg-white/10 text-xs ml-1">{MOCK_REVIEWS.length}</span>
+                            Değerlendirmeler <span className="px-1.5 py-0.5 rounded-md bg-white/10 text-xs ml-1">{reviews.length}</span>
                         </button>
                     </div>
 
@@ -573,15 +588,19 @@ export function ProfileView() {
 
                         {activeTab === 'reviews' && (
                             <div className="space-y-3">
-                                {MOCK_REVIEWS.length > 0 ? (
-                                    MOCK_REVIEWS.map((review: any) => (
+                                {reviews.length > 0 ? (
+                                    reviews.map((review: any) => (
                                         <div key={review.id} className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-2">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold">
-                                                        {review.reviewer.split(' ').map((n: string) => n[0]).join('')}
+                                                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-purple-500/20 overflow-hidden">
+                                                        {review.reviewer?.avatar_url ? (
+                                                            <img src={review.reviewer.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            review.reviewer?.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '?'
+                                                        )}
                                                     </div>
-                                                    <span className="text-slate-300 text-sm font-medium">{review.reviewer}</span>
+                                                    <span className="text-slate-300 text-sm font-medium">{review.reviewer?.full_name || 'Gizli Kullanıcı'}</span>
                                                 </div>
                                                 <StarRating rating={review.rating} />
                                             </div>
