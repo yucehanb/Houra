@@ -29,29 +29,14 @@ export async function signInWithEmail(formData: FormData) {
     const password = formData.get('password') as string
 
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) return { error: error.message }
-
-    redirect('/dashboard')
-}
-
-// ────────────────────────────────────────────
-// Google OAuth ile Giriş
-// ────────────────────────────────────────────
-export async function signInWithGoogle() {
-    if (!isSupabaseConfigured) {
-        return { error: '⚠️ Supabase henüz yapılandırılmadı. .env.local dosyasına gerçek API anahtarlarını ekleyin.' }
+    if (error) {
+        if (error.message.includes('Email not confirmed')) {
+            return { requireOtp: true, email, error: 'Lütfen önce e-posta adresinizi doğrulayın.' }
+        }
+        return { error: error.message }
     }
 
-    const supabase = await getClient()
-    const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-            redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/api/auth/callback`,
-        },
-    })
-
-    if (error) return { error: error.message }
-    if (data.url) redirect(data.url)
+    redirect('/dashboard')
 }
 
 // ────────────────────────────────────────────
@@ -72,12 +57,14 @@ export async function signUpWithEmail(formData: FormData) {
         password,
         options: {
             data: { full_name: fullName },
-            emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/api/auth/callback`,
         },
     })
 
     if (error) return { error: error.message }
 
+    // Normalde kullanıcıyı DB'ye kaydederken email onaylıysa yapardık ama profil tablosu RLS nedeniyle auth olmak isteyebilir. Service rolüyle eklemek daha iyi olabilir veya ilk girişte oluşturur. 
+    // Ancak signUp çalıştıysa ve email confirmation gerekiyorsa, auth user oluşur ama login olmaz.
+    // Başlangıç kredilerini user insert trigger ile vermek veya login sonrası tetiklemek daha sağlıklıdır, fakat şimdilik burada ekliyoruz (eğer RLS izin veriyorsa)
     if (data.user) {
         await supabase.from('users').upsert({
             id: data.user.id,
@@ -86,7 +73,42 @@ export async function signUpWithEmail(formData: FormData) {
         })
     }
 
-    return { success: 'Kayıt başarılı! E-postanızı doğrulayın.' }
+    return { requireOtp: true, email, success: 'Kayıt başarılı! Lütfen e-postanıza gelen 6 haneli kodu girin.' }
+}
+
+// ────────────────────────────────────────────
+// OTP (6-Haneli Kod) Doğrulama
+// ────────────────────────────────────────────
+export async function verifyOtpCode(email: string, token: string, type: 'signup' | 'recovery' | 'magiclink' = 'signup') {
+    if (!isSupabaseConfigured) return { error: 'Supabase yapılandırılmamış.' }
+
+    const supabase = await getClient()
+
+    // Auth metodundan OTP doğrulama
+    const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: type,
+    })
+
+    if (error) return { error: error.message }
+
+    // Eğer başarılıysa artık oturum açıldı demektir
+    redirect('/dashboard')
+}
+
+// ────────────────────────────────────────────
+// Yeniden OTP Gönder
+// ────────────────────────────────────────────
+export async function resendOtp(email: string) {
+    if (!isSupabaseConfigured) return { error: 'Supabase yapılandırılmamış.' }
+    const supabase = await getClient()
+    const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email
+    })
+    if (error) return { error: error.message }
+    return { success: 'Yeni kod gönderildi.' }
 }
 
 // ────────────────────────────────────────────
