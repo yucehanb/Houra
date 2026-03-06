@@ -147,6 +147,11 @@ export const useListingsStore = create<ListingsState>()(
                 }
             },
         }),
-        { name: 'houra-listings' } // Rebranded store name
+        {
+            name: 'houra-listings',
+            partialize: (state) => Object.fromEntries(
+                Object.entries(state).filter(([key]) => !['activeSubscription', 'isLoading'].includes(key))
+            ),
+        }
     )
 )
