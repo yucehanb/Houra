@@ -266,17 +266,37 @@ export function ProfileView() {
             const realUserId = authUser?.id || session?.user?.id
 
             if (realUserId) {
-                const { error } = await supabase.from('users').upsert({
-                    id: realUserId,
-                    full_name: data.full_name,
-                    bio: data.bio ?? null,
-                    city: data.city ?? null,
-                    skills: data.skills,
-                    needs: data.needs,
-                })
+                // Vercel üzerinde @supabase/ssr istemcisinin POST/PUT isteklerinde asılı kalma (hanging)
+                // sorununu aşmak için Supabase REST API'sine doğrudan temiz bir fetch isteği atıyoruz.
+                const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+                const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-                if (error) {
-                    throw error
+                if (!supabaseUrl || !supabaseAnonKey) {
+                    throw new Error("Supabase yapılandırması eksik.");
+                }
+
+                const token = session?.access_token || supabaseAnonKey;
+
+                const response = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${realUserId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': supabaseAnonKey,
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify({
+                        full_name: data.full_name,
+                        bio: data.bio ?? null,
+                        city: data.city ?? null,
+                        skills: data.skills,
+                        needs: data.needs,
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || 'Kullanıcı verileri kaydedilirken API hatası oluştu.');
                 }
 
                 // Başarılıysa veriyi tekrar çek
