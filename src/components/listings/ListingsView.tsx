@@ -10,12 +10,16 @@ import { useListingsStore } from '@/store/listingsStore'
 type SortOption = 'newest' | 'rating' | 'credits_asc' | 'credits_desc'
 
 export function ListingsView() {
-    const { listings, fetchListings, isLoading } = useListingsStore()
+    const { listings, fetchListings, isLoading, subscribeToListings } = useListingsStore()
     const [search, setSearch] = useState('')
 
     useEffect(() => {
         fetchListings()
-    }, [fetchListings])
+        const unsubscribe = subscribeToListings()
+        return () => {
+            if (unsubscribe) unsubscribe()
+        }
+    }, [fetchListings, subscribeToListings])
     const [category, setCategory] = useState<string | null>(null)
     const [typeFilter, setTypeFilter] = useState<'all' | 'offer' | 'request'>('all')
     const [sort, setSort] = useState<SortOption>('newest')

@@ -13,8 +13,10 @@ import { createClient } from '@/lib/supabase/client'
 interface ListingsState {
     listings: Listing[]
     isLoading: boolean
+    activeSubscription: any
     setListings: (listings: Listing[]) => void
     fetchListings: () => Promise<void>
+    subscribeToListings: () => () => void
     addListing: (listing: Listing) => void
     createListing: (listingData: any) => Promise<Listing>
     updateListingStatus: (id: string, status: Listing['status']) => void
@@ -26,6 +28,7 @@ export const useListingsStore = create<ListingsState>()(
         (set, get) => ({
             listings: INITIAL_LISTINGS,
             isLoading: false,
+            activeSubscription: null,
             setListings: (listings) => set({ listings }),
             fetchListings: async () => {
                 set({ isLoading: true })
@@ -42,6 +45,30 @@ export const useListingsStore = create<ListingsState>()(
                     console.error('İlanlar yüklenirken hata oluştu:', err)
                 } finally {
                     set({ isLoading: false })
+                }
+            },
+            subscribeToListings: () => {
+                if (get().activeSubscription) return () => { };
+
+                const supabase = createClient()
+                const channel = supabase
+                    .channel('realtime_listings')
+                    .on(
+                        'postgres_changes',
+                        { event: '*', schema: 'public', table: 'listings' },
+                        () => {
+                            // Yeni ilan eklendiğinde veya değiştiğinde listeyi güncelliyoruz
+                            get().fetchListings();
+                        }
+                    )
+                    .subscribe()
+
+                set({ activeSubscription: channel })
+
+                return () => {
+                    const sb = createClient()
+                    sb.removeChannel(channel)
+                    set({ activeSubscription: null })
                 }
             },
             addListing: (listing) =>

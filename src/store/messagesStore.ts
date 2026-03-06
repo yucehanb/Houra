@@ -3,8 +3,6 @@ import { createClient } from '@/lib/supabase/client'
 import type { RealtimePostgresInsertPayload } from '@supabase/supabase-js'
 import { useAuthStore } from '@/store/authStore'
 
-const supabase = createClient()
-
 // ── Tip tanımları ─────────────────────────────────────────────────────────────
 export interface ChatMessage {
     id: string
@@ -62,6 +60,7 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
         set({ isLoading: true })
         console.log('[fetchConversations] Başlıyor, userId:', userId)
         try {
+            const supabase = createClient()
             const { data, error } = await supabase
                 .from('conversations')
                 .select(`
@@ -134,6 +133,7 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
 
     fetchMessages: async (conversationId) => {
         try {
+            const supabase = createClient()
             const { data, error } = await supabase
                 .from('messages')
                 .select('*')
@@ -152,6 +152,7 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
 
     sendMessage: async (conversationId, content, senderId) => {
         try {
+            const supabase = createClient()
             const { data, error } = await supabase
                 .from('messages')
                 .insert({
@@ -196,6 +197,7 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
     },
 
     getOrCreateConversation: async (listingId, buyerId, sellerId, creditsAmount) => {
+        const supabase = createClient()
         // Mevcut konuşmayı bul
         const { data: existing } = await supabase
             .from('conversations')
@@ -242,6 +244,7 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
     },
 
     completeTransaction: async (conversationId, rating, comment, currentUserId, onProgress) => {
+        const supabase = createClient()
         onProgress?.('Store verileri alınıyor...')
         let conv = get().conversations.find(c => c.id === conversationId)
 
@@ -391,6 +394,7 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
         })
 
         try {
+            const supabase = createClient()
             await supabase
                 .from('messages')
                 .update({ is_read: true })
@@ -403,7 +407,7 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
         }
     },
 
-    activeSubscription: null as ReturnType<typeof supabase.channel> | null,
+    activeSubscription: null as any,
 
     subscribeToMessages: (userId) => {
         // Zaten aktif bir bağlantı varsa tekrar oluşturma
@@ -411,6 +415,7 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
             return () => { }; // Empty cleanup
         }
 
+        const supabase = createClient()
         const channel = supabase
             .channel('realtime_messages')
             .on(
@@ -494,6 +499,7 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
         set({ activeSubscription: channel })
 
         return () => {
+            const supabase = createClient()
             supabase.removeChannel(channel)
             set({ activeSubscription: null })
         }
@@ -501,6 +507,7 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
 
     deleteMessage: async (messageId, conversationId) => {
         try {
+            const supabase = createClient()
             const { error } = await supabase
                 .from('messages')
                 .delete()
@@ -529,6 +536,7 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
 
     deleteConversation: async (conversationId) => {
         try {
+            const supabase = createClient()
             const { error } = await supabase
                 .from('conversations')
                 .delete()

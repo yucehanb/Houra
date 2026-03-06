@@ -6,20 +6,17 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PU
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function enableRealtime() {
-    console.log("Checking if we can enable realtime...");
+  console.log("Checking if we can enable realtime...");
 
-    // We can't run pure DDL using the JS client without an RPC, so we will create a SQL script 
-    // for the user to run in their Supabase console.
-    console.log("Run this in Supabase SQL editor:");
-    console.log(`
+  // We can't run pure DDL using the JS client without an RPC, so we will create a SQL script 
+  // for the user to run in their Supabase console.
+  console.log("Run this in Supabase SQL editor:");
+  console.log(`
 BEGIN;
-  -- Remove tables from the publication first just in case
-  ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS messages;
-  ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS conversations;
-  
-  -- Add them back to enable realtime events
+  -- Note: If you get an 'already exists' error, you can safely ignore it.
   ALTER PUBLICATION supabase_realtime ADD TABLE messages;
   ALTER PUBLICATION supabase_realtime ADD TABLE conversations;
+  ALTER PUBLICATION supabase_realtime ADD TABLE listings;
 COMMIT;
     `);
 }

@@ -119,7 +119,7 @@ function ListingCard({ listing }: { listing: Listing }) {
 }
 
 export default function ListingsPage() {
-    const { listings, isLoading, fetchListings } = useListingsStore()
+    const { listings, isLoading, fetchListings, subscribeToListings } = useListingsStore()
 
     const [search, setSearch] = useState('')
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
@@ -128,7 +128,11 @@ export default function ListingsPage() {
 
     useEffect(() => {
         fetchListings()
-    }, [fetchListings])
+        const unsubscribe = subscribeToListings()
+        return () => {
+            if (unsubscribe) unsubscribe()
+        }
+    }, [fetchListings, subscribeToListings])
 
     const filtered = useMemo(() => {
         return listings.filter(l => {
