@@ -30,12 +30,18 @@ export default async function Home() {
       {/* ── Navbar ─────────────────── */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0a0a0c]/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-purple-500/20">
-              H
+          <Link href="/" className="flex items-center gap-3 pr-4 group">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 overflow-hidden">
+                <img src="/logo.png" alt="HOURA Logo" className="w-full h-full object-contain scale-[1.8] group-hover:scale-[2.1] transition-transform duration-500" />
             </div>
-            <span className="text-white font-bold tracking-tight text-xl">HOURA</span>
-          </div>
+            <span className="text-white font-bold text-xl tracking-tighter flex items-center drop-shadow-xl -ml-1">
+                H
+                <span className="text-purple-400">O</span>
+                U
+                <span className="text-blue-400">R</span>
+                A
+            </span>
+          </Link>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
             <a href="#nasil-calisir" className="hover:text-white transition-colors">Nasıl Çalışır?</a>
             <a href="#ozellikler" className="hover:text-white transition-colors">Özellikler</a>
