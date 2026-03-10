@@ -1,8 +1,30 @@
 import Link from 'next/link'
 import { ArrowRight, Clock, Star, Shield, Users, Zap, CheckCircle2, Globe, Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 
-export default function Home() {
+export const revalidate = 60; // 60 saniyede bir ISR üzerinden yenile
+
+function formatStat(num: number): string {
+  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K+';
+  return num.toString();
+}
+
+export default async function Home() {
+  // DB üzerinden eş zamanlı gerçek sayıları çekelim
+  const [{ count: usersCount }, { data: transactions }, { data: reviews }] = await Promise.all([
+    supabaseAdmin.from('users').select('*', { count: 'exact', head: true }),
+    supabaseAdmin.from('transactions').select('credits_amount').eq('status', 'completed'),
+    supabaseAdmin.from('reviews').select('rating')
+  ])
+
+  const liveUsers = usersCount || 0
+  const liveHours = transactions?.reduce((sum, t) => sum + Number(t.credits_amount || 0), 0) || 0
+  
+  const liveRating = reviews?.length 
+    ? (reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / reviews.length).toFixed(1)
+    : '5.0'
+
   return (
     <div className="min-h-screen bg-[#0a0a0c] selection:bg-purple-500/30">
       {/* ── Navbar ─────────────────── */}
@@ -52,22 +74,22 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto opacity-50">
+          <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto opacity-70">
             <div className="flex flex-col items-center">
-              <span className="text-white text-2xl font-bold">10K+</span>
-              <span className="text-slate-500 text-sm">Aktif Kullanıcı</span>
+              <span className="text-white text-3xl font-bold">{formatStat(liveUsers)}</span>
+              <span className="text-slate-500 text-sm mt-1">Aktif Kullanıcı</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-white text-2xl font-bold">50K+</span>
-              <span className="text-slate-500 text-sm">Takas Saati</span>
+              <span className="text-white text-3xl font-bold">{formatStat(liveHours)}</span>
+              <span className="text-slate-500 text-sm mt-1">Takas Saati</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-white text-2xl font-bold">4.9/5</span>
-              <span className="text-slate-500 text-sm">Kullanıcı Memnuniyeti</span>
+              <span className="text-white text-3xl font-bold">{liveRating}/5</span>
+              <span className="text-slate-500 text-sm mt-1">Ortalama Memnuniyet</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-white text-2xl font-bold">%100</span>
-              <span className="text-slate-500 text-sm">Güvenli Sistem</span>
+              <span className="text-white text-3xl font-bold">%100</span>
+              <span className="text-slate-500 text-sm mt-1">Güvenli Sistem</span>
             </div>
           </div>
         </div>
