@@ -127,27 +127,76 @@ export default function Home() {
                 ))}
               </div>
             </div>
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/20 to-blue-500/20 blur-3xl rounded-full" />
-              <div className="relative bg-white/5 border border-white/10 rounded-[2.5rem] p-8 md:p-12 backdrop-blur-sm">
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4 border-b border-white/5 pb-6">
-                    <div className="w-12 h-12 rounded-full bg-purple-500" />
+            <div className="relative w-full max-w-lg mx-auto lg:mx-0">
+              {/* Arka plan parlama efekti */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/30 to-blue-500/30 blur-3xl rounded-[3rem]" />
+              
+              {/* Gerçekçi İlan Kartı Mockup'ı */}
+              <div className="relative bg-[#111320] border border-white/10 rounded-[2.5rem] p-6 shadow-2xl transition-transform hover:-translate-y-2 duration-500 z-10">
+                
+                {/* Kart Üst (Kullanıcı & Kategori) */}
+                <div className="flex justify-between items-start mb-5">
+                  <div className="flex gap-3 items-center">
+                    <div className="relative">
+                      {/* Avatar Placeholder */}
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 p-[2px]">
+                        <div className="w-full h-full rounded-full bg-[#111320] flex items-center justify-center text-white font-bold">
+                          E
+                        </div>
+                      </div>
+                      <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-[#111320] rounded-full z-10"></div>
+                    </div>
                     <div>
-                      <div className="w-32 h-3 bg-white/10 rounded-full mb-2" />
-                      <div className="w-20 h-2 bg-white/5 rounded-full" />
+                      <h4 className="text-white font-bold text-[15px] leading-tight flex items-center gap-1">
+                        Elif Yılmaz <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
+                      </h4>
+                      <p className="text-slate-400 text-xs mt-0.5">İstanbul • Çevrimiçi</p>
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    <div className="w-full h-4 bg-white/10 rounded-full" />
-                    <div className="w-full h-4 bg-white/10 rounded-full" />
-                    <div className="w-3/4 h-4 bg-white/10 rounded-full" />
+                  <div className="bg-purple-500/20 text-purple-300 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
+                    Eğitim & Dil
                   </div>
-                  <div className="pt-4 grid grid-cols-2 gap-4">
-                    <div className="h-24 bg-white/5 rounded-2xl border border-white/5" />
-                    <div className="h-24 bg-white/5 rounded-2xl border border-white/5" />
+                </div>
+
+                {/* Kart İçerik */}
+                <div className="mb-5">
+                  <h3 className="text-xl font-bold text-white mb-2 leading-snug">
+                    İngilizce Konuşma Pratiği (A2-B2)
+                  </h3>
+                  <p className="text-slate-400 text-sm leading-relaxed line-clamp-2">
+                    Gramer ağırlıklı değil, tamamen pratiğe ve özgüven kazanmaya yönelik İngilizce sohbet seansları yapıyorum. Karşılığında sosyal medya danışmanlığı arıyorum!
+                  </p>
+                </div>
+
+                {/* Kredi & Yetenek Etiketleri */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex gap-2">
+                    <span className="bg-white/5 border border-white/10 text-slate-300 text-xs px-2.5 py-1 rounded-full flex items-center gap-1">
+                      <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" /> 4.9
+                    </span>
+                    <span className="bg-white/5 border border-white/10 text-slate-300 text-xs px-2.5 py-1 rounded-full">
+                      İngilizce Üst Orta
+                    </span>
                   </div>
-                  <div className="w-full h-12 bg-purple-600/50 rounded-xl animate-pulse" />
+                  <div className="flex items-center gap-1.5 bg-green-500/10 px-3 py-1.5 rounded-xl border border-green-500/20">
+                    <Clock className="w-4 h-4 text-green-400" />
+                    <span className="text-green-400 font-bold text-sm">2 Kredi / Saat</span>
+                  </div>
+                </div>
+
+                {/* Aksiyon Butonları (Mockup) */}
+                <div className="grid grid-cols-[1fr_auto] gap-3">
+                  <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-3.5 border-none rounded-xl text-sm shadow-lg shadow-purple-900/50 hover:opacity-90 transition-opacity">
+                    Hizmeti Al
+                  </button>
+                  <button className="w-12 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
+                    <Heart className="w-5 h-5 text-slate-400" />
+                  </button>
+                </div>
+
+                {/* Yüzen rozet / Dekoratif */}
+                <div className="absolute -right-6 -top-6 bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-2xl shadow-xl transform rotate-12 flex items-center justify-center animate-bounce-slow">
+                  <span className="text-2xl drop-shadow-md">🤝</span>
                 </div>
               </div>
             </div>
