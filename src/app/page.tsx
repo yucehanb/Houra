@@ -155,6 +155,44 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Community / Values ─────────────────── */}
+      <section id="topluluk" className="py-20 bg-gradient-to-b from-[#0a0a0c] to-[#120f1c]">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Topluluğumuza Katıl</h2>
+            <p className="text-slate-500 max-w-xl mx-auto">HOURA sadece bir yetenek takas platformu değil, aynı zamanda yardımlaşmayı seven insanların oluşturduğu büyük bir ailedir.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            <div className="p-8 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-colors" />
+              <Heart className="w-10 h-10 text-purple-400 mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-4">İyilik Zinciri</h3>
+              <p className="text-slate-400 leading-relaxed mb-6">
+                Burada para geçmez. Sadece zamanınızı ve emeğinizi ortaya koyarak ihtiyaç duyduğunuz şeylere ulaşırsınız. Biri sizin hayatınızı kolaylaştırırken, siz de yeteneğinizle bir başkasına dokunursunuz.
+              </p>
+              <ul className="space-y-3 text-slate-300">
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-purple-500" /> Eşitlikçi sistem</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-purple-500" /> Gerçek yardımlaşma</li>
+              </ul>
+            </div>
+
+            <div className="p-8 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-colors" />
+              <Globe className="w-10 h-10 text-blue-400 mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-4">Sınırları Kaldır</h3>
+              <p className="text-slate-400 leading-relaxed mb-6">
+                İster uzaktan dijital bir yeteneğinizi paylaşın, isterseniz mahallenizdeki komşunuza fiziksel bir konuda yardım edin. HOURA ile lokasyonunuza uygun veya online on binlerce kişiye anında erişin.
+              </p>
+              <ul className="space-y-3 text-slate-300">
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-blue-500" /> Yerel ve global erişim</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-blue-500" /> Yeni yetenekler keşfetme</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Final CTA ─────────────────── */}
       <section className="py-20 overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 relative">
@@ -180,9 +218,9 @@ export default function Home() {
             <span className="text-slate-600 text-xs ml-4">© 2026 Tüm hakları saklıdır.</span>
           </div>
           <div className="flex gap-8 text-sm text-slate-500">
-            <a href="#" className="hover:text-white transition-colors">Gizlilik Politikası</a>
-            <a href="#" className="hover:text-white transition-colors">Kullanım Şartları</a>
-            <a href="#" className="hover:text-white transition-colors">İletişim</a>
+            <Link href="/privacy" className="hover:text-white transition-colors">Gizlilik Politikası</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">Kullanım Şartları</Link>
+            <a href="mailto:destek@houra.app" className="hover:text-white transition-colors">İletişim</a>
           </div>
           <div className="flex gap-4">
             <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all cursor-pointer">𝕏</div>
