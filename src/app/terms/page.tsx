@@ -33,7 +33,7 @@ export default function TermsPage() {
                         <section>
                             <h2 className="text-2xl font-bold text-white mb-4">1. Kabul Edilme ve Genel Hükümler</h2>
                             <p className="text-slate-400">
-                                HOURA platformunu kullanarak veya platforma erişerek, bu Kullanım Koşulları'nı kabul etmiş sayılırsınız.
+                                HOURA platformunu kullanarak veya platforma erişerek, bu Kullanım Koşulları&apos;nı kabul etmiş sayılırsınız.
                                 Platformumuz bireylerin kendi aralarında adil, ücretsiz ve güvenli bir şekilde beceri takası yapmasını hedefler.
                                 Eğer bu koşulların herhangi bir kısmını kabul etmiyorsanız, platformu kullanmamalısınız.
                             </p>
@@ -62,7 +62,7 @@ export default function TermsPage() {
                         <section>
                             <h2 className="text-2xl font-bold text-white mb-4">4. Zaman Kredileri (Houra Kredisi)</h2>
                             <p className="text-slate-400">
-                                Kullanıcılar "Zaman Kredisi" kullanarak hizmet alır veya verirler. Yeni üye olan her kullanıcıya
+                                Kullanıcılar &quot;Zaman Kredisi&quot; kullanarak hizmet alır veya verirler. Yeni üye olan her kullanıcıya
                                 başlangıçta <strong className="text-white font-medium">2 kredi hediye edilir</strong>. Adil bir ekonomi ve rekabet düzeni
                                 oluşturmak amacıyla bir kullanıcının cüzdanında birikebilecek <strong className="text-white font-medium">maksimum kredi limiti 6</strong>
                                 olarak belirlenmiştir. Zaman kredisi gerçek bir para birimine

@@ -122,3 +122,39 @@ export async function signOut() {
     await supabase.auth.signOut()
     redirect('/login')
 }
+
+// ────────────────────────────────────────────
+// Şifre Sıfırlama Email Gönder
+// ────────────────────────────────────────────
+export async function sendPasswordResetEmail(formData: FormData) {
+    if (!isSupabaseConfigured) return { error: 'Supabase yapılandırılmamış.' }
+
+    const supabase = await getClient()
+    const email = formData.get('email') as string
+
+    // Callback URL'ye next=/update-password ekliyoruz ki email linkine tıklandığında auth/callback bizi update-password'a göndersin.
+    const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/callback?next=/update-password`
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo
+    })
+
+    if (error) return { error: error.message }
+    return { success: 'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. (Gelen Kutunuzu kontrol edin)' }
+}
+
+// ────────────────────────────────────────────
+// Şifre Güncelle (Sıfırlama Linkine Tıklandıktan Sonra)
+// ────────────────────────────────────────────
+export async function updatePassword(formData: FormData) {
+    if (!isSupabaseConfigured) return { error: 'Supabase yapılandırılmamış.' }
+
+    const supabase = await getClient()
+    const password = formData.get('password') as string
+
+    const { error } = await supabase.auth.updateUser({ password })
+
+    if (error) return { error: error.message }
+    
+    redirect('/dashboard')
+}

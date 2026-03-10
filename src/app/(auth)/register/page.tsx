@@ -153,7 +153,7 @@ export default function RegisterPage() {
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 mb-4 shadow-lg shadow-purple-500/30">
                     <span className="text-2xl">⏱</span>
                 </div>
-                <h1 className="text-2xl font-bold text-white mb-1">HOURA'ya Katıl</h1>
+                <h1 className="text-2xl font-bold text-white mb-1">HOURA&apos;ya Katıl</h1>
                 <p className="text-slate-400 text-sm">
                     Ücretsiz kayıt ol,{' '}
                     <span className="text-green-400 font-semibold">2 başlangıç kredisi</span> kazan! 🎁
@@ -241,7 +241,7 @@ export default function RegisterPage() {
                         <Link href="/terms" className="text-purple-400 hover:text-purple-300 transition-colors">Kullanım Koşulları</Link>
                         {' '}ve{' '}
                         <Link href="/privacy" className="text-purple-400 hover:text-purple-300 transition-colors">Gizlilik Politikası</Link>
-                        'nı okudum ve kabul ediyorum.
+                        &apos;nı okudum ve kabul ediyorum.
                     </span>
                 </label>
 

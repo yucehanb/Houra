@@ -80,7 +80,7 @@ export default function PrivacyPage() {
                         <section>
                             <h2 className="text-2xl font-bold text-white mb-4">6. Kullanıcı Seçimleri ve Veri İzni Hakları</h2>
                             <p className="text-slate-400">
-                                Hesap sahipleri, profillerini ve paylaşılan verilerini diledikleri zaman "Profil Düzenleme" alanından
+                                Hesap sahipleri, profillerini ve paylaşılan verilerini diledikleri zaman &quot;Profil Düzenleme&quot; alanından
                                 değiştirme hakkına sahiptir. Tüm veri geçmişinizin anonimleştirilmesi veya sistemden
                                 tümüyle çıkartılması için kalıcı hesap silimi talep etmeniz mümkündür. Hesap silindiğinde
                                 mesaj geçmişiniz karşı taraftaki bütünlüğü korumak adına anonim (bölgesel) olarak arşivlenebilir.
