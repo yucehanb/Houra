@@ -220,7 +220,7 @@ export default function Home() {
           <div className="flex gap-8 text-sm text-slate-500">
             <Link href="/privacy" className="hover:text-white transition-colors">Gizlilik Politikası</Link>
             <Link href="/terms" className="hover:text-white transition-colors">Kullanım Şartları</Link>
-            <a href="mailto:destek@houra.app" className="hover:text-white transition-colors">İletişim</a>
+            <a href="mailto:houra.iletisim@gmail.com" className="hover:text-white transition-colors">İletişim</a>
           </div>
           <div className="flex gap-4">
             <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all cursor-pointer">𝕏</div>
